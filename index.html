@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rice Jump! 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        * { font-family: 'Press+Start 2P', monospace; user-select: none; -webkit-user-select: none; }
+        .retro-text { text-shadow: 3px 3px 0px #000; }
+        .retro-btn { box-shadow: 0 4px 0 #1b1b1b; transition: all 0.05s ease; }
+        .retro-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #1b1b1b; }
+        canvas { display: block; background: #87CEEB; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white overflow-hidden m-0 p-0 w-screen h-screen flex flex-col items-center justify-center">
+
+    <audio id="bgm-title" src="title.mp3" loop></audio>
+    <audio id="bgm-stage" src="bgm1.mp3" loop></audio>
+    <audio id="bgm-underground" src="underground.mp3" loop></audio>
+    <audio id="bgm-water" src="underwater.mp3" loop></audio>
+    <audio id="bgm-snow" src="snowstage.mp3" loop></audio>
+    <audio id="bgm-invincible" src="무적.mp3" loop></audio>
+    <audio id="scream-audio" src="으아아아악.mp3"></audio>
+    <audio id="rice-audio" src="밥솥.mp3"></audio>
+    <audio id="stage-clear-audio" src="stage_clear.mp3"></audio>
+    <audio id="congrats-audio" src="축하합니다.mp3"></audio>
+    <audio id="notification-audio" src="notification.mp3"></audio>
+    <audio id="downtime-audio" src="downtime.mp3" loop></audio>
+
+    <div id="game-container" class="relative w-full max-w-4xl h-[600px] bg-sky-400 border-4 border-black overflow-hidden shadow-2xl flex flex-col">
+        <div id="ui-bar" class="absolute top-0 left-0 w-full h-14 bg-black/70 px-4 flex items-center justify-between z-10 text-xs md:text-sm font-bold text-yellow-300 hidden">
+            <div>STAGE: <span id="ui-stage">1</span></div>
+            <div>SCORE: <span id="ui-score">0</span></div>
+            <div>LIVES: <span id="ui-lives">3</span></div>
+            <div>TIME: <span id="ui-timer">100</span></div>
+        </div>
+
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+        <div id="audio-unlock-screen" class="absolute inset-0 bg-black flex flex-col items-center justify-center text-center p-6 z-30">
+            <h2 class="text-xl md:text-3xl text-yellow-400 mb-6 retro-text animate-pulse">RICE JUMP! 3</h2>
+            <p class="text-[10px] md:text-xs text-gray-300 mb-8 max-w-md leading-relaxed">
+                더욱 강력해진 30개의 스테이지와 모험!<br>
+                시작하려면 화면을 탭하세요.
+            </p>
+            <button id="audio-unlock-btn" class="retro-btn px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-[10px] md:text-xs cursor-pointer">
+                TAP TO START
+            </button>
+        </div>
+
+        <div id="title-screen" class="absolute inset-0 bg-sky-900 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <h1 class="text-2xl md:text-4xl text-yellow-400 mb-6 retro-text animate-bounce">RICE JUMP! 3</h1>
+            <p class="text-xs text-gray-200 mb-8 leading-relaxed">최고의 밥솥 마스터가 되기 위한 모험을 시작하세요!</p>
+            <button id="start-game-btn" class="retro-btn px-8 py-4 bg-yellow-400 text-black font-bold rounded-lg border-2 border-white text-xs cursor-pointer">GAME START!</button>
+        </div>
+
+        <div id="gameover-screen" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <h2 class="text-2xl md:text-4xl text-red-500 mb-4 retro-text">GAME OVER</h2>
+            <p class="text-gray-300 mb-6 text-xs">밥이 타버렸습니다!</p>
+            <button id="restart-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">다시 도전하기</button>
+        </div>
+
+        <div id="clear-screen" class="absolute inset-0 bg-black/90 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <h2 id="clear-title" class="text-2xl md:text-4xl text-emerald-400 mb-4 retro-text">STAGE CLEAR!</h2>
+            <p id="clear-msg" class="text-gray-200 mb-6 text-xs">훌륭합니다! 다음 단계로 전진하세요.</p>
+            <button id="next-stage-btn" class="retro-btn px-6 py-3 bg-emerald-500 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">다음 스테이지</button>
+        </div>
+
+        <div id="ending-screen" class="absolute inset-0 bg-yellow-900/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <h2 class="text-2xl md:text-4xl text-yellow-300 mb-4 retro-text">CONGRATULATIONS!</h2>
+            <p class="text-white mb-6 text-xs leading-relaxed">당신은 모든 30개 스테이지를 클리어하고 최고의 밥솥 마스터가 되었습니다!</p>
+            <button id="ending-restart-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">처음부터 다시하기</button>
+        </div>
+
+        <div id="stage15-special-screen" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <div class="relative w-28 h-28 mb-4 flex items-center justify-center bg-gray-800 rounded-full border-4 border-yellow-400 animate-bounce">
+                <span class="text-3xl">😴</span>
+                <span class="absolute -top-2 right-2 text-[10px] text-blue-300 animate-pulse">Z z z...</span>
+            </div>
+            <h2 class="text-lg md:text-xl text-yellow-300 mb-4 retro-text leading-relaxed">헉! 벌써 반이나 오셨네요! 축하합니다!</h2>
+            <button id="stage15-special-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">후반부 스테이지로 출발!</button>
+        </div>
+
+        <div id="downtime-modal" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-40">
+            <div id="downtime-sleep-anim" class="relative w-28 h-28 mb-6 flex items-center justify-center bg-indigo-900 rounded-full border-4 border-blue-400">
+                <span class="text-4xl">🛏️💤</span>
+                <span class="absolute -top-4 right-4 text-xs text-cyan-300 animate-bounce">Z z z</span>
+            </div>
+            <h2 id="downtime-title" class="text-xl md:text-2xl text-yellow-400 mb-4 retro-text">DOWN TIME</h2>
+            <p id="downtime-msg" class="text-gray-200 mb-6 text-xs max-w-md leading-relaxed">지금은 다운타임 시간입니다.</p>
+            <button id="downtime-ok-btn" class="retro-btn px-6 py-3 bg-blue-500 text-white font-bold rounded border-2 border-white text-xs cursor-pointer hidden">확인</button>
+        </div>
+
+        <div id="mobile-controls" class="absolute bottom-2 left-2 right-2 flex justify-between items-center pointer-events-auto z-10 md:hidden px-2 hidden">
+            <div class="flex gap-2">
+                <button id="btn-left" class="w-12 h-12 bg-black/60 active:bg-black/90 text-white rounded-full border-2 border-white text-xs font-bold">◀</button>
+                <button id="btn-right" class="w-12 h-12 bg-black/60 active:bg-black/90 text-white rounded-full border-2 border-white text-xs font-bold">▶</button>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-shoot" class="w-12 h-12 bg-blue-600 active:bg-blue-800 text-white rounded-full border-2 border-white text-[9px] font-bold">WATER</button>
+                <button id="btn-jump" class="w-12 h-12 bg-yellow-500 active:bg-yellow-700 text-black rounded-full border-2 border-white text-[9px] font-bold">JUMP</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const bgmTitle = document.getElementById('bgm-title');
+        const bgmStage = document.getElementById('bgm-stage');
+        const bgmUnderground = document.getElementById('bgm-underground');
+        const bgmWater = document.getElementById('bgm-water');
+        const bgmSnow = document.getElementById('bgm-snow');
+        const bgmInvincible = document.getElementById('bgm-invincible');
+        const screamAudio = document.getElementById('scream-audio');
+        const riceAudio = document.getElementById('rice-audio');
+        const stageClearAudio = document.getElementById('stage-clear-audio');
+        const congratsAudio = document.getElementById('congrats-audio');
+        const notificationAudio = document.getElementById('notification-audio');
+        const downtimeAudio = document.getElementById('downtime-audio');
+
+        function stopAllBgm() {
+            bgmTitle.pause(); bgmTitle.currentTime = 0;
+            bgmStage.pause(); bgmStage.currentTime = 0;
+            bgmUnderground.pause(); bgmUnderground.currentTime = 0;
+            bgmWater.pause(); bgmWater.currentTime = 0;
+            bgmSnow.pause(); bgmSnow.currentTime = 0;
+            bgmInvincible.pause(); bgmInvincible.currentTime = 0;
+            downtimeAudio.pause(); downtimeAudio.currentTime = 0;
+        }
+
+        function playCurrentBgm() {
+            if (!gameState.isActive) return;
+            if (player.invincible) {
+                stopAllBgm();
+                if (bgmInvincible.paused) bgmInvincible.play().catch(() => {});
+                return;
+            }
+            stopAllBgm();
+            if (gameState.stage >= 1 && gameState.stage <= 6) {
+                bgmStage.play().catch(() => {});
+            } else if (gameState.stage >= 7 && gameState.stage <= 12) {
+                bgmUnderground.play().catch(() => {});
+            } else if (gameState.stage >= 13 && gameState.stage <= 16) {
+                bgmWater.play().catch(() => {});
+            } else if (gameState.stage >= 17 && gameState.stage <= 30) {
+                bgmSnow.play().catch(() => {});
+            }
+        }
+
+        let gameState = {
+            isActive: false,
+            score: 0,
+            stage: 1,
+            lives: 3,
+            timer: 100
+        };
+
+        let player = {
+            x: 100, y: 350, w: 42, h: 56,
+            vx: 0, vy: 0, speed: 5, jumpForce: -12,
+            grounded: false, facing: 1,
+            waterGunActive: true,
+            invincible: false, invincibleTimer: null
+        };
+
+        let cameraX = 0;
+        let platforms = [];
+        let mysteryBlocks = [];
+        let enemies = [];
+        let projectiles = [];
+        let riceCookerItems = [];
+        let boss = null;
+        let goalSwitch = { x: 3000, y: 472, w: 48, h: 48, pressed: false };
+        let snowMan = { x: 3000, y: 420, w: 48, h: 64, found: false };
+
+        let keys = { left: false, right: false, jump: false, shoot: false };
+        let lastTimerTick = Date.now();
+        let isDowntimeMode = false;
+        let isPreDowntimeMode = false;
+        let lastNotifiedMinute = -1;
+
+        function checkDowntimeClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+
+            if (hours >= 22 || hours < 8) {
+                isDowntimeMode = true;
+                isPreDowntimeMode = false;
+                stopAllBgm();
+                gameState.isActive = false;
+
+                document.getElementById('audio-unlock-screen').classList.add('hidden');
+                document.getElementById('title-screen').classList.add('hidden');
+                document.getElementById('gameover-screen').classList.add('hidden');
+                document.getElementById('clear-screen').classList.add('hidden');
+                document.getElementById('ending-screen').classList.add('hidden');
+                document.getElementById('stage15-special-screen').classList.add('hidden');
+                document.getElementById('ui-bar').classList.add('hidden');
+                document.getElementById('mobile-controls').classList.add('hidden');
+
+                if (downtimeAudio.paused) downtimeAudio.play().catch(() => {});
+
+                const downtimeModal = document.getElementById('downtime-modal');
+                downtimeModal.classList.remove('hidden');
+                document.getElementById('downtime-sleep-anim').classList.remove('hidden');
+                document.getElementById('downtime-title').innerText = "DOWN TIME";
+                document.getElementById('downtime-msg').innerHTML = "지금은 다운타임 시간입니다. 안 주무시고 뭐 하세요? 이제 그만 주무실 시간입니다!<br>저희 게임은 밤에 몰겜을 방지하기 위해 다운타임 기능이 있습니다.<br>내일 오전 8시 이후에 다시 오시고 안녕히 주무세요!";
+                document.getElementById('downtime-ok-btn').classList.add('hidden');
+                return;
+            } else {
+                if (isDowntimeMode && hours >= 8) {
+                    isDowntimeMode = false;
+                    downtimeAudio.pause();
+                    document.getElementById('downtime-modal').classList.add('hidden');
+                    document.getElementById('audio-unlock-screen').classList.remove('hidden');
+                }
+            }
+
+            if (hours === 21 && minutes >= 50 && minutes < 60) {
+                if (!isPreDowntimeMode) {
+                    isPreDowntimeMode = true;
+                    stopAllBgm();
+                    gameState.isActive = false;
+                    downtimeAudio.currentTime = 0;
+                    downtimeAudio.play().catch(() => {});
+
+                    document.getElementById('audio-unlock-screen').classList.add('hidden');
+                    document.getElementById('title-screen').classList.add('hidden');
+                    document.getElementById('gameover-screen').classList.add('hidden');
+                    document.getElementById('clear-screen').classList.add('hidden');
+                    document.getElementById('stage15-special-screen').classList.add('hidden');
+                    document.getElementById('ui-bar').classList.add('hidden');
+                    document.getElementById('mobile-controls').classList.add('hidden');
+
+                    const downtimeModal = document.getElementById('downtime-modal');
+                    downtimeModal.classList.remove('hidden');
+                    document.getElementById('downtime-sleep-anim').classList.remove('hidden');
+                    document.getElementById('downtime-title').innerText = "DAILY WRAP-UP";
+                    document.getElementById('downtime-msg').innerHTML = "오늘의 하루가 종료되었습니다. 오늘도 수고 많으셨습니다. 안녕히 주무세요!";
+                    document.getElementById('downtime-ok-btn').classList.add('hidden');
+                }
+                return;
+            } else {
+                if (isPreDowntimeMode && (hours !== 21 || minutes < 50)) {
+                    isPreDowntimeMode = false;
+                    downtimeAudio.pause();
+                }
+            }
+
+            if (hours === 21 && (minutes === 30 || minutes === 35 || minutes === 40 || minutes === 45)) {
+                if (lastNotifiedMinute !== minutes) {
+                    lastNotifiedMinute = minutes;
+                    notificationAudio.currentTime = 0;
+                    notificationAudio.play().catch(() => {});
+                    showNoticePopup(`잠시 후 다운타임이 시작됩니다! 게임 잘 정리하세요!`);
+                }
+            } else if (minutes !== 30 && minutes !== 35 && minutes !== 40 && minutes !== 45) {
+                lastNotifiedMinute = minutes;
+            }
+        }
+
+        function showNoticePopup(msg) {
+            const downtimeModal = document.getElementById('downtime-modal');
+            downtimeModal.classList.remove('hidden');
+            document.getElementById('downtime-sleep-anim').classList.add('hidden');
+            document.getElementById('downtime-title').innerText = "NOTICE";
+            document.getElementById('downtime-msg').innerText = msg;
+            document.getElementById('downtime-ok-btn').classList.remove('hidden');
+        }
+
+        setInterval(checkDowntimeClock, 1000);
+        checkDowntimeClock();
+
+        document.getElementById('downtime-ok-btn').addEventListener('click', () => {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            if (!((hours >= 22 || hours < 8) || (hours === 21 && minutes >= 50))) {
+                document.getElementById('downtime-modal').classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('keydown', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                if (!keys.jump) jumpPlayer();
+                keys.jump = true;
+            }
+            if (e.code === 'KeyX' || e.code === 'KeyJ') shootWaterGun();
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
+        });
+
+        document.getElementById('btn-left').addEventListener('touchstart', () => keys.left = true);
+        document.getElementById('btn-left').addEventListener('touchend', () => keys.left = false);
+        document.getElementById('btn-right').addEventListener('touchstart', () => keys.right = true);
+        document.getElementById('btn-right').addEventListener('touchend', () => keys.right = false);
+        document.getElementById('btn-jump').addEventListener('click', () => jumpPlayer());
+        document.getElementById('btn-shoot').addEventListener('click', () => shootWaterGun());
+
+        document.getElementById('audio-unlock-btn').addEventListener('click', () => {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+
+            if (hours >= 22 || hours < 8) return;
+            if (hours === 21 && minutes >= 50) {
+                showNoticePopup("오늘의 하루가 종료되었습니다. 오늘도 수고 많으셨습니다. 안녕히 주무세요!");
+                return;
+            }
+
+            document.getElementById('audio-unlock-screen').classList.add('hidden');
+            document.getElementById('title-screen').classList.remove('hidden');
+            bgmTitle.currentTime = 0;
+            bgmTitle.play().catch(() => {});
+        });
+
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('ui-bar').classList.remove('hidden');
+            document.getElementById('mobile-controls').classList.remove('hidden');
+            screamAudio.currentTime = 0;
+            screamAudio.play().catch(() => {});
+            gameState.isActive = true;
+            lastTimerTick = Date.now();
+            initStage(1);
+        });
+
+        function jumpPlayer() {
+            if (!gameState.isActive) return;
+            if (player.grounded) {
+                player.vy = player.jumpForce;
+                player.grounded = false;
+            }
+        }
+
+        function shootWaterGun() {
+            if (!gameState.isActive || !player.waterGunActive) return;
+            projectiles.push({
+                x: player.x + (player.facing > 0 ? player.w : -10),
+                y: player.y + player.h / 2 - 4,
+                w: 16, h: 8, vx: player.facing * 10, type: 'water'
+            });
+        }
+
+        function initStage(stageNum) {
+            gameState.stage = stageNum;
+            gameState.timer = 100;
+            player.x = 80;
+            player.y = 300;
+            player.vx = 0;
+            player.vy = 0;
+            cameraX = 0;
+            projectiles = [];
+            riceCookerItems = [];
+            boss = null;
+
+            platforms = [];
+            mysteryBlocks = [];
+            enemies = [];
+
+            let groundY = 520;
+            let currentX = 0;
+            let totalWidth = 3200;
+
+            while (currentX < totalWidth) {
+                let gapWidth = 60 + Math.random() * 50;
+                let platWidth = 280 + Math.random() * 200;
+
+                for (let px = currentX; px < currentX + platWidth && px < totalWidth; px += 50) {
+                    platforms.push({ x: px, y: groundY, w: 50, h: 80, type: stageNum >= 17 ? 'snow' : (stageNum >= 13 ? 'water' : (stageNum >= 7 ? 'underground' : 'ground')) });
+                }
+
+                if (platWidth > 150 && currentX > 150) {
+                    enemies.push({
+                        x: currentX + 70, y: groundY - 40, w: 36, h: 36, vx: 1.5, minX: currentX + 30, maxX: currentX + platWidth - 70, alive: true
+                    });
+                }
+
+                if (Math.random() < 0.6 && currentX > 250) {
+                    riceCookerItems.push({
+                        x: currentX + 100, y: groundY - 120, w: 40, h: 40, collected: false
+                    });
+                }
+
+                currentX += platWidth + gapWidth;
+            }
+
+            for (let i = 0; i < 5; i++) {
+                mysteryBlocks.push({
+                    x: 500 + i * 500, y: 320 - (i % 2) * 50, w: 40, h: 40, hit: false, item: 'rice'
+                });
+            }
+
+            if (stageNum % 5 === 0) {
+                boss = {
+                    x: 2800, y: groundY - 100, w: 80, h: 80, hp: 5, maxHp: 5, vx: 1, dir: 1, alive: true
+                };
+            }
+
+            goalSwitch.x = totalWidth - 200;
+            goalSwitch.y = groundY - 48;
+            goalSwitch.pressed = false;
+
+            snowMan.x = totalWidth - 220;
+            snowMan.y = groundY - 64;
+            snowMan.found = false;
+
+            playCurrentBgm();
+        }
+
+        function activateInvincibleMode() {
+            player.invincible = true;
+            riceAudio.currentTime = 0;
+            riceAudio.play().catch(() => {});
+            playCurrentBgm();
+
+            if (player.invincibleTimer) clearTimeout(player.invincibleTimer);
+            player.invincibleTimer = setTimeout(() => {
+                player.invincible = false;
+                playCurrentBgm();
+            }, 8000);
+        }
+
+        function update() {
+            if (!gameState.isActive) return;
+
+            if (Date.now() - lastTimerTick >= 1000) {
+                gameState.timer--;
+                lastTimerTick = Date.now();
+                if (gameState.timer <= 0) {
+                    playerDie();
+                }
+            }
+
+            if (keys.left) {
+                player.vx = -player.speed;
+                player.facing = -1;
+            } else if (keys.right) {
+                player.vx = player.speed;
+                player.facing = 1;
+            } else {
+                player.vx = 0;
+            }
+
+            player.vy += 0.5;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            player.grounded = false;
+            platforms.forEach(p => {
+                if (player.x + player.w > p.x && player.x < p.x + p.w &&
+                    player.y + player.h >= p.y && player.y + player.h - player.vy <= p.y + 10) {
+                    player.y = p.y - player.h;
+                    player.vy = 0;
+                    player.grounded = true;
+                }
+            });
+
+            mysteryBlocks.forEach(mb => {
+                if (player.x + player.w > mb.x && player.x < mb.x + mb.w &&
+                    player.y <= mb.y + mb.h && player.y - player.vy >= mb.y + mb.h - 10) {
+                    player.vy = 2;
+                    if (!mb.hit) {
+                        mb.hit = true;
+                        activateInvincibleMode();
+                        gameState.score += 200;
+                    }
+                }
+            });
+
+            riceCookerItems.forEach(rc => {
+                if (!rc.collected &&
+                    player.x + player.w > rc.x && player.x < rc.x + rc.w &&
+                    player.y + player.h > rc.y && player.y < rc.y + rc.h) {
+                    rc.collected = true;
+                    activateInvincibleMode();
+                    gameState.score += 500;
+                }
+            });
+
+            if (player.y > canvas.height + 100) {
+                playerDie();
+            }
+
+            enemies.forEach(en => {
+                if (!en.alive) return;
+                en.x += en.vx;
+                if (en.x < en.minX || en.x > en.maxX) en.vx *= -1;
+
+                if (!player.invincible &&
+                    player.x + player.w > en.x + 4 && player.x < en.x + en.w - 4 &&
+                    player.y + player.h > en.y + 4 && player.y < en.y + en.h) {
+                    playerDie();
+                }
+            });
+
+            if (boss && boss.alive) {
+                boss.x += boss.vx * boss.dir;
+                if (boss.x < 2500 || boss.x > 3100) boss.dir *= -1;
+
+                if (!player.invincible &&
+                    player.x + player.w > boss.x && player.x < boss.x + boss.w &&
+                    player.y + player.h > boss.y && player.y < boss.y + boss.h) {
+                    playerDie();
+                }
+            }
+
+            projectiles.forEach((proj, idx) => {
+                proj.x += proj.vx;
+                if (boss && boss.alive &&
+                    proj.x + proj.w > boss.x && proj.x < boss.x + boss.w &&
+                    proj.y + proj.h > boss.y && proj.y < boss.y + boss.h) {
+                    boss.hp--;
+                    projectiles.splice(idx, 1);
+                    if (boss.hp <= 0) {
+                        boss.alive = false;
+                        gameState.score += 2000;
+                    }
+                }
+            });
+
+            if (gameState.stage >= 17 && gameState.stage <= 30) {
+                if (!snowMan.found &&
+                    player.x + player.w > snowMan.x && player.x < snowMan.x + snowMan.w &&
+                    player.y + player.h > snowMan.y && player.y < snowMan.y + snowMan.h) {
+                    snowMan.found = true;
+                    triggerStageClear();
+                }
+            } else {
+                if (!goalSwitch.pressed &&
+                    player.x + player.w > goalSwitch.x && player.x < goalSwitch.x + goalSwitch.w &&
+                    player.y + player.h > goalSwitch.y && player.y < goalSwitch.y + goalSwitch.h) {
+                    goalSwitch.pressed = true;
+                    triggerStageClear();
+                }
+            }
+
+            cameraX = player.x - canvas.width / 3;
+            if (cameraX < 0) cameraX = 0;
+
+            document.getElementById('ui-stage').innerText = gameState.stage;
+            document.getElementById('ui-score').innerText = gameState.score;
+            document.getElementById('ui-lives').innerText = gameState.lives;
+            document.getElementById('ui-timer').innerText = gameState.timer;
+        }
+
+        function playerDie() {
+            if (player.invincible) return;
+            gameState.lives--;
+            if (gameState.lives <= 0) {
+                gameState.isActive = false;
+                stopAllBgm();
+                document.getElementById('gameover-screen').classList.remove('hidden');
+            } else {
+                player.x = 80;
+                player.y = 200;
+                player.vy = 0;
+            }
+        }
+
+        function triggerStageClear() {
+            gameState.isActive = false;
+            stopAllBgm();
+
+            if (gameState.stage === 15) {
+                stageClearAudio.currentTime = 0;
+                stageClearAudio.play().catch(() => {});
+                setTimeout(() => {
+                    congratsAudio.currentTime = 0;
+                    congratsAudio.play().catch(() => {});
+                    document.getElementById('stage15-special-screen').classList.remove('hidden');
+                }, 3000);
+                return;
+            }
+
+            stageClearAudio.currentTime = 0;
+            stageClearAudio.play().catch(() => {});
+
+            if (gameState.stage >= 30) {
+                document.getElementById('ending-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('clear-screen').classList.remove('hidden');
+                document.getElementById('clear-msg').innerText = `STAGE ${gameState.stage} 클리어 완료!`;
+            }
+        }
+
+        document.getElementById('next-stage-btn').addEventListener('click', () => {
+            document.getElementById('clear-screen').classList.add('hidden');
+            if (gameState.stage === 12 || gameState.stage === 16) {
+                screamAudio.currentTime = 0;
+                screamAudio.play().catch(() => {});
+            }
+            initStage(gameState.stage + 1);
+            gameState.isActive = true;
+            lastTimerTick = Date.now();
+        });
+
+        document.getElementById('stage15-special-btn').addEventListener('click', () => {
+            document.getElementById('stage15-special-screen').classList.add('hidden');
+            screamAudio.currentTime = 0;
+            screamAudio.play().catch(() => {});
+            initStage(16);
+            gameState.isActive = true;
+            lastTimerTick = Date.now();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            gameState.lives = 3;
+            gameState.score = 0;
+            initStage(1);
+            gameState.isActive = true;
+            lastTimerTick = Date.now();
+        });
+
+        document.getElementById('ending-restart-btn').addEventListener('click', () => {
+            document.getElementById('ending-screen').classList.add('hidden');
+            gameState.lives = 3;
+            gameState.score = 0;
+            initStage(1);
+            gameState.isActive = true;
+            lastTimerTick = Date.now();
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let stageNum = gameState.stage;
+            let skyColor = "#87CEEB";
+            if (stageNum >= 7 && stageNum <= 12) skyColor = "#1a1a2e";
+            else if (stageNum >= 13 && stageNum <= 16) skyColor = "#023e8a";
+            else if (stageNum >= 17 && stageNum <= 30) skyColor = "#caf0f8";
+
+            ctx.fillStyle = skyColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            platforms.forEach(p => {
+                if (p.type === 'snow') ctx.fillStyle = "#ffffff";
+                else if (p.type === 'water') ctx.fillStyle = "#0077b6";
+                else if (p.type === 'underground') ctx.fillStyle = "#3a3a3a";
+                else ctx.fillStyle = "#2baf2b";
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+            });
+
+            mysteryBlocks.forEach(mb => {
+                ctx.fillStyle = mb.hit ? "#888" : "#f39c12";
+                ctx.fillRect(mb.x, mb.y, mb.w, mb.h);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(mb.x, mb.y, mb.w, mb.h);
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px 'Press Start 2P'";
+                ctx.fillText("?", mb.x + 12, mb.y + 26);
+            });
+
+            riceCookerItems.forEach(rc => {
+                if (!rc.collected) {
+                    ctx.fillStyle = "#ff4757";
+                    ctx.fillRect(rc.x, rc.y, rc.w, rc.h);
+                    ctx.strokeStyle = "#000";
+                    ctx.strokeRect(rc.x, rc.y, rc.w, rc.h);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "8px 'Press Start 2P'";
+                    ctx.fillText("RICE", rc.x + 4, rc.y + 24);
+                }
+            });
+
+            enemies.forEach(en => {
+                if (en.alive) {
+                    ctx.fillStyle = "#e74c3c";
+                    ctx.fillRect(en.x, en.y, en.w, en.h);
+                    ctx.fillStyle = "#fff";
+                    ctx.fillRect(en.x + 6, en.y + 8, 6, 6);
+                    ctx.fillRect(en.x + 22, en.y + 8, 6, 6);
+                }
+            });
+
+            if (boss && boss.alive) {
+                ctx.fillStyle = "#8e44ad";
+                ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+                ctx.fillStyle = "#f1c40f";
+                ctx.fillRect(boss.x + 10, boss.y - 15, (boss.hp / boss.maxHp) * 60, 8);
+            }
+
+            if (stageNum >= 17 && stageNum <= 30) {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(snowMan.x + 24, snowMan.y + 20, 16, 0, Math.PI * 2);
+                ctx.arc(snowMan.x + 24, snowMan.y + 48, 22, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = goalSwitch.pressed ? "#2ecc71" : "#e67e22";
+                ctx.fillRect(goalSwitch.x, goalSwitch.y, goalSwitch.w, goalSwitch.h);
+            }
+
+            projectiles.forEach(proj => {
+                ctx.fillStyle = "#00d2d3";
+                ctx.beginPath();
+                ctx.arc(proj.x + proj.w / 2, proj.y + proj.h / 2, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.fillStyle = player.invincible ? "#f1c40f" : "#fffa65";
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(player.x, player.y, player.w, player.h);
+
+            ctx.fillStyle = "#000";
+            let eyeOffset = player.facing > 0 ? 26 : 10;
+            ctx.fillRect(player.x + eyeOffset, player.y + 14, 6, 8);
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
