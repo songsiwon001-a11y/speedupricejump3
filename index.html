@@ -28,6 +28,7 @@
     <audio id="congrats-audio" src="축하합니다.mp3"></audio>
     <audio id="notification-audio" src="notification.mp3"></audio>
     <audio id="downtime-audio" src="downtime.mp3" loop></audio>
+    <audio id="gun-audio" src="gun_shoot!.mp3"></audio>
 
     <div id="game-container" class="relative w-full max-w-4xl h-[600px] bg-sky-400 border-4 border-black overflow-hidden shadow-2xl flex flex-col">
         <div id="ui-bar" class="absolute top-0 left-0 w-full h-14 bg-black/70 px-4 flex items-center justify-between z-10 text-xs md:text-sm font-bold text-yellow-300 hidden">
@@ -84,7 +85,7 @@
         </div>
 
         <div id="downtime-modal" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-40">
-            <div id="downtime-sleep-anim" class="relative w-28 h-28 mb-6 flex items-center justify-center bg-indigo-900 rounded-full border-4 border-blue-400">
+            <div id="downtime-sleep-anim" class="relative w-28 h-28 mb-6 flex items-center justify-center bg-indigo-900 rounded-full border-4 border-blue-400 animate-pulse">
                 <span class="text-4xl">🛏️💤</span>
                 <span class="absolute -top-4 right-4 text-xs text-cyan-300 animate-bounce">Z z z</span>
             </div>
@@ -128,34 +129,21 @@
         const congratsAudio = document.getElementById('congrats-audio');
         const notificationAudio = document.getElementById('notification-audio');
         const downtimeAudio = document.getElementById('downtime-audio');
+        const gunAudio = document.getElementById('gun-audio');
 
-        function stopAllBgm() {
-            bgmTitle.pause(); bgmTitle.currentTime = 0;
-            bgmStage.pause(); bgmStage.currentTime = 0;
-            bgmUnderground.pause(); bgmUnderground.currentTime = 0;
-            bgmWater.pause(); bgmWater.currentTime = 0;
-            bgmSnow.pause(); bgmSnow.currentTime = 0;
-            bgmInvincible.pause(); bgmInvincible.currentTime = 0;
-            downtimeAudio.pause(); downtimeAudio.currentTime = 0;
+        const allBgms = [bgmTitle, bgmStage, bgmUnderground, bgmWater, bgmSnow, bgmInvincible];
+
+        function setPlaybackRate(rate) {
+            allBgms.forEach(audio => {
+                audio.playbackRate = rate;
+            });
         }
 
-        function playCurrentBgm() {
-            if (!gameState.isActive) return;
-            if (player.invincible) {
-                stopAllBgm();
-                if (bgmInvincible.paused) bgmInvincible.play().catch(() => {});
-                return;
-            }
-            stopAllBgm();
-            if (gameState.stage >= 1 && gameState.stage <= 6) {
-                bgmStage.play().catch(() => {});
-            } else if (gameState.stage >= 7 && gameState.stage <= 12) {
-                bgmUnderground.play().catch(() => {});
-            } else if (gameState.stage >= 13 && gameState.stage <= 16) {
-                bgmWater.play().catch(() => {});
-            } else if (gameState.stage >= 17 && gameState.stage <= 30) {
-                bgmSnow.play().catch(() => {});
-            }
+        function stopAllBgm() {
+            allBgms.forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0;
+            });
         }
 
         let gameState = {
@@ -190,6 +178,22 @@
         let isPreDowntimeMode = false;
         let lastNotifiedMinute = -1;
 
+        function playCurrentBgm() {
+            if (!gameState.isActive) return;
+            setPlaybackRate(gameState.timer <= 50 ? 1.5 : 1.0);
+            if (player.invincible) {
+                stopAllBgm();
+                if (bgmInvincible.paused) bgmInvincible.play().catch(() => {});
+                return;
+            }
+            stopAllBgm();
+            let targetAudio = bgmStage;
+            if (gameState.stage >= 7 && gameState.stage <= 12) targetAudio = bgmUnderground;
+            else if (gameState.stage >= 13 && gameState.stage <= 16) targetAudio = bgmWater;
+            else if (gameState.stage >= 17 && gameState.stage <= 30) targetAudio = bgmSnow;
+            targetAudio.play().catch(() => {});
+        }
+
         function checkDowntimeClock() {
             const now = new Date();
             const hours = now.getHours();
@@ -210,7 +214,10 @@
                 document.getElementById('ui-bar').classList.add('hidden');
                 document.getElementById('mobile-controls').classList.add('hidden');
 
-                if (downtimeAudio.paused) downtimeAudio.play().catch(() => {});
+                downtimeAudio.playbackRate = 1.0;
+                if (downtimeAudio.paused) {
+                    downtimeAudio.play().catch(() => {});
+                }
 
                 const downtimeModal = document.getElementById('downtime-modal');
                 downtimeModal.classList.remove('hidden');
@@ -233,8 +240,10 @@
                     isPreDowntimeMode = true;
                     stopAllBgm();
                     gameState.isActive = false;
-                    downtimeAudio.currentTime = 0;
-                    downtimeAudio.play().catch(() => {});
+                    downtimeAudio.playbackRate = 1.0;
+                    if (downtimeAudio.paused) {
+                        downtimeAudio.play().catch(() => {});
+                    }
 
                     document.getElementById('audio-unlock-screen').classList.add('hidden');
                     document.getElementById('title-screen').classList.add('hidden');
@@ -264,7 +273,7 @@
                     lastNotifiedMinute = minutes;
                     notificationAudio.currentTime = 0;
                     notificationAudio.play().catch(() => {});
-                    showNoticePopup(`잠시 후 다운타임이 시작됩니다! 게임 잘 정리하세요!`);
+                    showNoticePopup("잠시 후 다운타임이 시작됩니다! 게임 잘 정리하세요!");
                 }
             } else if (minutes !== 30 && minutes !== 35 && minutes !== 40 && minutes !== 45) {
                 lastNotifiedMinute = minutes;
@@ -328,7 +337,8 @@
 
             document.getElementById('audio-unlock-screen').classList.add('hidden');
             document.getElementById('title-screen').classList.remove('hidden');
-            bgmTitle.currentTime = 0;
+            stopAllBgm();
+            setPlaybackRate(1.0);
             bgmTitle.play().catch(() => {});
         });
 
@@ -353,6 +363,8 @@
 
         function shootWaterGun() {
             if (!gameState.isActive || !player.waterGunActive) return;
+            gunAudio.currentTime = 0;
+            gunAudio.play().catch(() => {});
             projectiles.push({
                 x: player.x + (player.facing > 0 ? player.w : -10),
                 y: player.y + player.h / 2 - 4,
@@ -381,22 +393,22 @@
             let totalWidth = 3200;
 
             while (currentX < totalWidth) {
-                let gapWidth = 60 + Math.random() * 50;
-                let platWidth = 280 + Math.random() * 200;
+                let gapWidth = 60 + Math.random() * 40;
+                let platWidth = 260 + Math.random() * 180;
 
                 for (let px = currentX; px < currentX + platWidth && px < totalWidth; px += 50) {
                     platforms.push({ x: px, y: groundY, w: 50, h: 80, type: stageNum >= 17 ? 'snow' : (stageNum >= 13 ? 'water' : (stageNum >= 7 ? 'underground' : 'ground')) });
                 }
 
-                if (platWidth > 150 && currentX > 150) {
+                if (platWidth > 140 && currentX > 120) {
                     enemies.push({
-                        x: currentX + 70, y: groundY - 40, w: 36, h: 36, vx: 1.5, minX: currentX + 30, maxX: currentX + platWidth - 70, alive: true
+                        x: currentX + 60, y: groundY - 40, w: 36, h: 36, vx: 1.5, minX: currentX + 30, maxX: currentX + platWidth - 60, alive: true
                     });
                 }
 
-                if (Math.random() < 0.6 && currentX > 250) {
+                if (Math.random() < 0.6 && currentX > 200) {
                     riceCookerItems.push({
-                        x: currentX + 100, y: groundY - 120, w: 40, h: 40, collected: false
+                        x: currentX + 90, y: groundY - 120, w: 40, h: 40, collected: false
                     });
                 }
 
@@ -447,6 +459,11 @@
                 lastTimerTick = Date.now();
                 if (gameState.timer <= 0) {
                     playerDie();
+                } else {
+                    let desiredRate = gameState.timer <= 50 ? 1.5 : 1.0;
+                    if (allBgms[0].playbackRate !== desiredRate) {
+                        setPlaybackRate(desiredRate);
+                    }
                 }
             }
 
