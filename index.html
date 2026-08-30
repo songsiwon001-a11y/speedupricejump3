@@ -117,12 +117,74 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        const bgmTitle = document.getElementById('bgm-title');
-        const bgmStage = document.getElementById('bgm-stage');
-        const bgmUnderground = document.getElementById('bgm-underground');
-        const bgmWater = document.getElementById('bgm-water');
-        const bgmSnow = document.getElementById('bgm-snow');
-        const bgmInvincible = document.getElementById('bgm-invincible');
+        let audioCtx = null;
+        const audioElements = {};
+        const sourceNodes = {};
+        const gainNodes = {};
+
+        const audioIds = [
+            'bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible',
+            'scream-audio', 'rice-audio', 'stage-clear-audio', 'congrats-audio', 'notification-audio',
+            'downtime-audio', 'gun-audio'
+        ];
+
+        function initWebAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    audioElements[id] = el;
+                    try {
+                        const track = audioCtx.createMediaElementSource(el);
+                        const gainNode = audioCtx.createGain();
+                        track.connect(gainNode).connect(audioCtx.destination);
+                        gainNodes[id] = gainNode;
+                    } catch (e) {}
+                }
+            });
+        }
+
+        function playAudio(id, loop = false) {
+            initWebAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const el = audioElements[id];
+            if (el) {
+                el.loop = loop;
+                el.currentTime = 0;
+                el.play().catch(() => {});
+            }
+        }
+
+        function stopAudio(id) {
+            const el = audioElements[id];
+            if (el) {
+                el.pause();
+                el.currentTime = 0;
+            }
+        }
+
+        function stopAllBgm() {
+            ['bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible'].forEach(id => {
+                stopAudio(id);
+            });
+        }
+
+        function setAudioSpeed(id, rate) {
+            const el = audioElements[id];
+            if (el) {
+                el.playbackRate = rate;
+            }
+        }
+
+        function setAllBgmSpeed(rate) {
+            ['bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible'].forEach(id => {
+                setAudioSpeed(id, rate);
+            });
+        }
+
         const screamAudio = document.getElementById('scream-audio');
         const riceAudio = document.getElementById('rice-audio');
         const stageClearAudio = document.getElementById('stage-clear-audio');
@@ -130,21 +192,6 @@
         const notificationAudio = document.getElementById('notification-audio');
         const downtimeAudio = document.getElementById('downtime-audio');
         const gunAudio = document.getElementById('gun-audio');
-
-        const allBgms = [bgmTitle, bgmStage, bgmUnderground, bgmWater, bgmSnow, bgmInvincible];
-
-        function setPlaybackRate(rate) {
-            allBgms.forEach(audio => {
-                audio.playbackRate = rate;
-            });
-        }
-
-        function stopAllBgm() {
-            allBgms.forEach(audio => {
-                audio.pause();
-                audio.currentTime = 0;
-            });
-        }
 
         let gameState = {
             isActive: false,
@@ -176,22 +223,25 @@
         let lastTimerTick = Date.now();
         let isDowntimeMode = false;
         let isPreDowntimeMode = false;
+        let isTenMinLockMode = false;
         let lastNotifiedMinute = -1;
 
         function playCurrentBgm() {
             if (!gameState.isActive) return;
-            setPlaybackRate(gameState.timer <= 50 ? 1.5 : 1.0);
+            let targetRate = gameState.timer <= 50 ? 1.5 : 1.0;
+            setAllBgmSpeed(targetRate);
+
             if (player.invincible) {
                 stopAllBgm();
-                if (bgmInvincible.paused) bgmInvincible.play().catch(() => {});
+                playAudio('bgm-invincible', true);
                 return;
             }
             stopAllBgm();
-            let targetAudio = bgmStage;
-            if (gameState.stage >= 7 && gameState.stage <= 12) targetAudio = bgmUnderground;
-            else if (gameState.stage >= 13 && gameState.stage <= 16) targetAudio = bgmWater;
-            else if (gameState.stage >= 17 && gameState.stage <= 30) targetAudio = bgmSnow;
-            targetAudio.play().catch(() => {});
+            let targetAudioId = 'bgm-stage';
+            if (gameState.stage >= 7 && gameState.stage <= 12) targetAudioId = 'bgm-underground';
+            else if (gameState.stage >= 13 && gameState.stage <= 16) targetAudioId = 'bgm-water';
+            else if (gameState.stage >= 17 && gameState.stage <= 30) targetAudioId = 'bgm-snow';
+            playAudio(targetAudioId, true);
         }
 
         function checkDowntimeClock() {
@@ -202,6 +252,7 @@
             if (hours >= 22 || hours < 8) {
                 isDowntimeMode = true;
                 isPreDowntimeMode = false;
+                isTenMinLockMode = false;
                 stopAllBgm();
                 gameState.isActive = false;
 
@@ -214,9 +265,9 @@
                 document.getElementById('ui-bar').classList.add('hidden');
                 document.getElementById('mobile-controls').classList.add('hidden');
 
-                downtimeAudio.playbackRate = 1.0;
+                setAudioSpeed('downtime-audio', 1.0);
                 if (downtimeAudio.paused) {
-                    downtimeAudio.play().catch(() => {});
+                    playAudio('downtime-audio', true);
                 }
 
                 const downtimeModal = document.getElementById('downtime-modal');
@@ -229,20 +280,21 @@
             } else {
                 if (isDowntimeMode && hours >= 8) {
                     isDowntimeMode = false;
-                    downtimeAudio.pause();
+                    stopAudio('downtime-audio');
                     document.getElementById('downtime-modal').classList.add('hidden');
                     document.getElementById('audio-unlock-screen').classList.remove('hidden');
                 }
             }
 
             if (hours === 21 && minutes >= 50 && minutes < 60) {
-                if (!isPreDowntimeMode) {
-                    isPreDowntimeMode = true;
+                if (!isTenMinLockMode) {
+                    isTenMinLockMode = true;
+                    isPreDowntimeMode = false;
                     stopAllBgm();
                     gameState.isActive = false;
-                    downtimeAudio.playbackRate = 1.0;
+                    setAudioSpeed('downtime-audio', 1.0);
                     if (downtimeAudio.paused) {
-                        downtimeAudio.play().catch(() => {});
+                        playAudio('downtime-audio', true);
                     }
 
                     document.getElementById('audio-unlock-screen').classList.add('hidden');
@@ -262,17 +314,16 @@
                 }
                 return;
             } else {
-                if (isPreDowntimeMode && (hours !== 21 || minutes < 50)) {
-                    isPreDowntimeMode = false;
-                    downtimeAudio.pause();
+                if (isTenMinLockMode && (hours !== 21 || minutes < 50)) {
+                    isTenMinLockMode = false;
+                    stopAudio('downtime-audio');
                 }
             }
 
             if (hours === 21 && (minutes === 30 || minutes === 35 || minutes === 40 || minutes === 45)) {
                 if (lastNotifiedMinute !== minutes) {
                     lastNotifiedMinute = minutes;
-                    notificationAudio.currentTime = 0;
-                    notificationAudio.play().catch(() => {});
+                    playAudio('notification-audio', false);
                     showNoticePopup("잠시 후 다운타임이 시작됩니다! 게임 잘 정리하세요!");
                 }
             } else if (minutes !== 30 && minutes !== 35 && minutes !== 40 && minutes !== 45) {
@@ -308,7 +359,7 @@
                 if (!keys.jump) jumpPlayer();
                 keys.jump = true;
             }
-            if (e.code === 'KeyX' || e.code === 'KeyJ') shootWaterGun();
+            if (e.code === 'KeyX' || e.code === 'KeyJ' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') shootWaterGun();
         });
 
         window.addEventListener('keyup', e => {
@@ -325,6 +376,7 @@
         document.getElementById('btn-shoot').addEventListener('click', () => shootWaterGun());
 
         document.getElementById('audio-unlock-btn').addEventListener('click', () => {
+            initWebAudio();
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
@@ -338,16 +390,15 @@
             document.getElementById('audio-unlock-screen').classList.add('hidden');
             document.getElementById('title-screen').classList.remove('hidden');
             stopAllBgm();
-            setPlaybackRate(1.0);
-            bgmTitle.play().catch(() => {});
+            setAllBgmSpeed(1.0);
+            playAudio('bgm-title', true);
         });
 
         document.getElementById('start-game-btn').addEventListener('click', () => {
             document.getElementById('title-screen').classList.add('hidden');
             document.getElementById('ui-bar').classList.remove('hidden');
             document.getElementById('mobile-controls').classList.remove('hidden');
-            screamAudio.currentTime = 0;
-            screamAudio.play().catch(() => {});
+            playAudio('scream-audio', false);
             gameState.isActive = true;
             lastTimerTick = Date.now();
             initStage(1);
@@ -363,8 +414,7 @@
 
         function shootWaterGun() {
             if (!gameState.isActive || !player.waterGunActive) return;
-            gunAudio.currentTime = 0;
-            gunAudio.play().catch(() => {});
+            playAudio('gun-audio', false);
             projectiles.push({
                 x: player.x + (player.facing > 0 ? player.w : -10),
                 y: player.y + player.h / 2 - 4,
@@ -440,8 +490,7 @@
 
         function activateInvincibleMode() {
             player.invincible = true;
-            riceAudio.currentTime = 0;
-            riceAudio.play().catch(() => {});
+            playAudio('rice-audio', false);
             playCurrentBgm();
 
             if (player.invincibleTimer) clearTimeout(player.invincibleTimer);
@@ -461,8 +510,8 @@
                     playerDie();
                 } else {
                     let desiredRate = gameState.timer <= 50 ? 1.5 : 1.0;
-                    if (allBgms[0].playbackRate !== desiredRate) {
-                        setPlaybackRate(desiredRate);
+                    if (audioElements['bgm-stage'] && audioElements['bgm-stage'].playbackRate !== desiredRate) {
+                        setAllBgmSpeed(desiredRate);
                     }
                 }
             }
@@ -595,21 +644,20 @@
 
         function triggerStageClear() {
             gameState.isActive = false;
-            stopAllBgm();
+            if (!player.invincible) {
+                stopAllBgm();
+            }
 
             if (gameState.stage === 15) {
-                stageClearAudio.currentTime = 0;
-                stageClearAudio.play().catch(() => {});
+                playAudio('stage-clear-audio', false);
                 setTimeout(() => {
-                    congratsAudio.currentTime = 0;
-                    congratsAudio.play().catch(() => {});
+                    playAudio('congrats-audio', false);
                     document.getElementById('stage15-special-screen').classList.remove('hidden');
                 }, 3000);
                 return;
             }
 
-            stageClearAudio.currentTime = 0;
-            stageClearAudio.play().catch(() => {});
+            playAudio('stage-clear-audio', false);
 
             if (gameState.stage >= 30) {
                 document.getElementById('ending-screen').classList.remove('hidden');
@@ -622,8 +670,7 @@
         document.getElementById('next-stage-btn').addEventListener('click', () => {
             document.getElementById('clear-screen').classList.add('hidden');
             if (gameState.stage === 12 || gameState.stage === 16) {
-                screamAudio.currentTime = 0;
-                screamAudio.play().catch(() => {});
+                playAudio('scream-audio', false);
             }
             initStage(gameState.stage + 1);
             gameState.isActive = true;
@@ -632,8 +679,7 @@
 
         document.getElementById('stage15-special-btn').addEventListener('click', () => {
             document.getElementById('stage15-special-screen').classList.add('hidden');
-            screamAudio.currentTime = 0;
-            screamAudio.play().catch(() => {});
+            playAudio('scream-audio', false);
             initStage(16);
             gameState.isActive = true;
             lastTimerTick = Date.now();
