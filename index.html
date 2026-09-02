@@ -7,11 +7,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        * { font-family: 'Press Start 2P', monospace !important; user-select: none; -webkit-user-select: none; }
-        .retro-text { text-shadow: 3px 3px 0px #000; }
-        .retro-btn { box-shadow: 0 4px 0 #1b1b1b; transition: all 0.05s ease; }
-        .retro-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #1b1b1b; }
-        canvas { display: block; background: #87CEEB; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; }
+        * {
+            font-family: 'Press Start 2P', monospace !important;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .retro-text {
+            text-shadow: 3px 3px 0px #000;
+        }
+        .retro-btn {
+            box-shadow: 0 4px 0 #1b1b1b;
+            transition: all 0.05s ease;
+        }
+        .retro-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #1b1b1b;
+        }
+        canvas {
+            display: block;
+            background: #87CEEB;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            image-rendering: -moz-crisp-edges;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white overflow-hidden m-0 p-0 w-screen h-screen flex flex-col items-center justify-center">
@@ -21,10 +39,12 @@
     <audio id="bgm-underground" src="underground.mp3" loop></audio>
     <audio id="bgm-water" src="underwater.mp3" loop></audio>
     <audio id="bgm-snow" src="snowstage.mp3" loop></audio>
+    <audio id="bgm-boss" src="보스전.mp3" loop></audio>
     <audio id="bgm-invincible" src="무적.mp3" loop></audio>
     <audio id="scream-audio" src="으아아아악.mp3"></audio>
     <audio id="rice-audio" src="밥솥.mp3"></audio>
     <audio id="stage-clear-audio" src="stage_clear.mp3"></audio>
+    <audio id="bgm-shop" src="item_shop.mp3" loop></audio>
     <audio id="congrats-audio" src="축하합니다.mp3"></audio>
     <audio id="notification-audio" src="notification.mp3"></audio>
     <audio id="downtime-audio" src="downtime.mp3" loop></audio>
@@ -32,28 +52,42 @@
     <audio id="die-audio" src="die.wav"></audio>
     <audio id="gameover-audio" src="GAME_OVER.mp3"></audio>
     <audio id="pause-audio" src="pause.mp3"></audio>
+    <audio id="back-audio" src="back.mp3" loop></audio>
+    <audio id="win-audio" src="win.mp3"></audio>
 
     <div id="game-container" class="relative w-full max-w-4xl h-[600px] bg-sky-400 border-4 border-black overflow-hidden shadow-2xl flex flex-col">
-        <div id="ui-bar" class="absolute top-0 left-0 w-full h-14 bg-black/70 px-4 flex items-center justify-between z-10 text-xs md:text-sm font-bold text-yellow-300 hidden">
+        <div id="ui-bar" class="absolute top-0 left-0 w-full h-14 bg-black/70 px-4 flex items-center justify-between z-10 text-[10px] md:text-xs font-bold text-yellow-300 hidden">
             <div>STAGE: <span id="ui-stage">1</span></div>
             <div>SCORE: <span id="ui-score">0</span></div>
+            <div>RICE: 🍚<span id="ui-rice">0</span></div>
             <div>LIVES: <span id="ui-lives">3</span></div>
             <div>TIME: <span id="ui-timer">100</span></div>
+            <button id="self-destruct-btn" class="bg-red-600 hover:bg-red-700 active:bg-red-900 text-white px-2 py-1 rounded border border-white text-[9px] cursor-pointer">💥 자폭</button>
         </div>
 
         <canvas id="gameCanvas" class="w-full h-full"></canvas>
 
         <div id="pause-screen" class="absolute inset-0 bg-black/80 hidden flex flex-col items-center justify-center text-center p-6 z-30 cursor-pointer">
             <h2 class="text-3xl md:text-5xl text-yellow-400 mb-4 retro-text animate-pulse">PAUSE</h2>
-            <p class="text-xs text-gray-300">엔터를 누르거나 화면을 터치하여 계속하세요</p>
+            <p class="text-[10px] text-gray-300">엔터를 누르거나 화면을 터치하여 계속하세요</p>
         </div>
 
         <div id="audio-unlock-screen" class="absolute inset-0 bg-black flex flex-col items-center justify-center text-center p-6 z-30">
             <h2 class="text-xl md:text-3xl text-yellow-400 mb-6 retro-text animate-pulse">RICE JUMP! 3</h2>
-            <p class="text-[10px] md:text-xs text-gray-300 mb-8 max-w-md leading-relaxed">
+            <p class="text-[10px] md:text-xs text-gray-300 mb-6 max-w-md leading-relaxed">
                 더욱 강력해진 30개의 스테이지와 모험!<br>
                 시작하려면 화면을 탭하세요.
             </p>
+
+            <div class="mb-6 flex flex-col items-center gap-2">
+                <p class="text-[9px] text-yellow-300">비밀번호 입력 (이어서 하기)</p>
+                <div class="flex gap-2">
+                    <input id="password-input" type="text" maxlength="4" placeholder="CODE" class="px-3 py-2 text-center text-black font-bold uppercase rounded border-2 border-yellow-400 text-xs w-28 tracking-widest outline-none">
+                    <button id="password-btn" class="retro-btn px-3 py-2 bg-yellow-400 hover:bg-yellow-300 text-black text-[9px] font-bold rounded border border-white cursor-pointer">이동</button>
+                </div>
+                <p id="password-msg" class="text-[8px] text-red-400 min-h-[12px]"></p>
+            </div>
+
             <button id="audio-unlock-btn" class="retro-btn px-6 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-[10px] md:text-xs cursor-pointer">
                 TAP TO START
             </button>
@@ -61,25 +95,94 @@
 
         <div id="title-screen" class="absolute inset-0 bg-sky-900 hidden flex flex-col items-center justify-center text-center p-6 z-20">
             <h1 class="text-2xl md:text-4xl text-yellow-400 mb-6 retro-text animate-bounce">RICE JUMP! 3</h1>
-            <p class="text-xs text-gray-200 mb-8 leading-relaxed">최고의 밥솥 마스터가 되기 위한 모험을 시작하세요!</p>
+            <p class="text-[10px] text-gray-200 mb-8 leading-relaxed">최고의 밥솥 마스터가 되기 위한 모험을 시작하세요!</p>
             <button id="start-game-btn" class="retro-btn px-8 py-4 bg-yellow-400 text-black font-bold rounded-lg border-2 border-white text-xs cursor-pointer">GAME START!</button>
         </div>
 
         <div id="gameover-screen" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
             <h2 class="text-2xl md:text-4xl text-red-500 mb-4 retro-text">GAME OVER</h2>
-            <p class="text-gray-300 mb-6 text-xs">밥이 타버렸습니다!</p>
-            <button id="restart-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">다시 도전하기</button>
+            <p class="text-gray-300 mb-6 text-[10px]">밥이 타버렸습니다!</p>
+            <button id="restart-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">이어서 재도전하기</button>
         </div>
 
         <div id="clear-screen" class="absolute inset-0 bg-black/90 hidden flex flex-col items-center justify-center text-center p-6 z-20">
             <h2 id="clear-title" class="text-2xl md:text-4xl text-emerald-400 mb-4 retro-text">STAGE CLEAR!</h2>
-            <p id="clear-msg" class="text-gray-200 mb-6 text-xs">훌륭합니다! 다음 단계로 전진하세요.</p>
-            <button id="next-stage-btn" class="retro-btn px-6 py-3 bg-emerald-500 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">다음 스테이지</button>
+            <p id="clear-msg" class="text-gray-200 mb-3 text-[10px]">훌륭합니다! 다음 단계로 전진하세요.</p>
+            <div id="pw-display-box" class="mb-6 hidden text-[10px] text-yellow-300 bg-black/60 px-4 py-2 rounded border border-yellow-500">
+                다음 스테이지 비밀번호: <span id="next-stage-pw" class="text-white font-bold tracking-widest"></span>
+            </div>
+            <div class="flex gap-3">
+                <button id="open-shop-btn" class="retro-btn px-4 py-3 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold rounded border-2 border-white text-xs cursor-pointer hidden">🛒 ITEM SHOP!</button>
+                <button id="next-stage-btn" class="retro-btn px-6 py-3 bg-emerald-500 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">다음 스테이지</button>
+            </div>
+        </div>
+
+        <div id="shop-modal" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-40">
+            <h2 class="text-xl md:text-3xl text-yellow-400 mb-2 retro-text animate-pulse">🛒 ITEM SHOP 🛒</h2>
+            <p class="text-[9px] text-gray-300 mb-2">방향키(↑/↓) 선택 후 엔터 또는 2번 클릭으로 구매</p>
+            <div class="text-xs text-yellow-300 mb-4 bg-yellow-950/80 px-4 py-2 rounded border border-yellow-500 font-bold">
+                보유 쌀: 🍚 <span id="shop-rice-count">0</span>개
+            </div>
+
+            <div id="shop-item-list" class="flex flex-col gap-2 w-full max-w-md mb-4 max-h-[260px] overflow-y-auto px-2">
+                <div data-item-id="perm_invincible" class="shop-item-card flex items-center justify-between bg-gray-800 p-3 rounded border-2 border-gray-600 cursor-pointer transition-all hover:border-yellow-400">
+                    <div class="text-left">
+                        <div class="text-[10px] text-amber-400 font-bold">✨ 영원 무적 밥솥</div>
+                        <div class="text-[8px] text-gray-300">게임 종료까지 영구 무적 상태 유지</div>
+                    </div>
+                    <div class="text-xs font-bold text-yellow-300 bg-yellow-950 px-2 py-1 rounded border border-yellow-600">🍚 100개</div>
+                </div>
+
+                <div data-item-id="perm_self_destruct_immune" class="shop-item-card flex items-center justify-between bg-gray-800 p-3 rounded border-2 border-gray-600 cursor-pointer transition-all hover:border-yellow-400">
+                    <div class="text-left">
+                        <div class="text-[10px] text-red-400 font-bold">🛡️ 자폭버튼 영원히 무효</div>
+                        <div class="text-[8px] text-gray-300">자폭 버튼이 영원히 작동하지 않음</div>
+                    </div>
+                    <div class="text-xs font-bold text-yellow-300 bg-yellow-950 px-2 py-1 rounded border border-yellow-600">🍚 50개</div>
+                </div>
+
+                <div data-item-id="shield_3" class="shop-item-card flex items-center justify-between bg-gray-800 p-3 rounded border-2 border-gray-600 cursor-pointer transition-all hover:border-yellow-400">
+                    <div class="text-left">
+                        <div class="text-[10px] text-cyan-400 font-bold">🛡️ 자폭버튼 3회 방어</div>
+                        <div class="text-[8px] text-gray-300">자폭 시도를 총 3회 차단 및 방어</div>
+                    </div>
+                    <div class="text-xs font-bold text-yellow-300 bg-yellow-950 px-2 py-1 rounded border border-yellow-600">🍚 30개</div>
+                </div>
+
+                <div data-item-id="shield_1" class="shop-item-card flex items-center justify-between bg-gray-800 p-3 rounded border-2 border-gray-600 cursor-pointer transition-all hover:border-yellow-400">
+                    <div class="text-left">
+                        <div class="text-[10px] text-blue-400 font-bold">🛡️ 자폭버튼 1회 방어</div>
+                        <div class="text-[8px] text-gray-300">자폭 시도를 1회 차단 및 방어</div>
+                    </div>
+                    <div class="text-xs font-bold text-yellow-300 bg-yellow-950 px-2 py-1 rounded border border-yellow-600">🍚 10개</div>
+                </div>
+
+                <div data-item-id="score_50" class="shop-item-card flex items-center justify-between bg-gray-800 p-3 rounded border-2 border-gray-600 cursor-pointer transition-all hover:border-yellow-400">
+                    <div class="text-left">
+                        <div class="text-[10px] text-emerald-400 font-bold">⭐ 점수 50점 늘리기</div>
+                        <div class="text-[8px] text-gray-300">즉시 점수 +50점 획득</div>
+                    </div>
+                    <div class="text-xs font-bold text-yellow-300 bg-yellow-950 px-2 py-1 rounded border border-yellow-600">🍚 5개</div>
+                </div>
+            </div>
+
+            <button id="close-shop-btn" class="retro-btn px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded border-2 border-white text-xs cursor-pointer">나가기</button>
+        </div>
+
+        <div id="shop-confirm-modal" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-50">
+            <h3 class="text-lg md:text-xl text-yellow-400 mb-4 retro-text">아이템 구매 확인</h3>
+            <p id="shop-confirm-msg" class="text-gray-200 mb-6 text-[10px] max-w-md leading-relaxed">
+                이 아이템을 구매하시겠습니까?<br>아이템을 구매하면 쌀이 없어집니다.
+            </p>
+            <div class="flex gap-4">
+                <button id="confirm-cancel-btn" class="retro-btn px-5 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded border-2 border-white text-xs cursor-pointer">취소</button>
+                <button id="confirm-buy-btn" class="retro-btn px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">구매하기</button>
+            </div>
         </div>
 
         <div id="ending-screen" class="absolute inset-0 bg-yellow-900/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
             <h2 class="text-2xl md:text-4xl text-yellow-300 mb-4 retro-text">CONGRATULATIONS!</h2>
-            <p class="text-white mb-6 text-xs leading-relaxed">당신은 모든 30개 스테이지를 클리어하고 최고의 밥솥 마스터가 되었습니다!</p>
+            <p class="text-white mb-6 text-[10px] leading-relaxed">당신은 모든 30개 스테이지를 클리어하고 최고의 밥솥 마스터가 되었습니다!</p>
             <button id="ending-restart-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">처음부터 다시하기</button>
         </div>
 
@@ -88,7 +191,10 @@
                 <span class="text-3xl">😴</span>
                 <span class="absolute -top-2 right-2 text-[10px] text-blue-300 animate-pulse">Z z z...</span>
             </div>
-            <h2 class="text-lg md:text-xl text-yellow-300 mb-4 retro-text leading-relaxed">헉! 벌써 반이나 오셨네요! 축하합니다!</h2>
+            <h2 class="text-base md:text-lg text-yellow-300 mb-2 retro-text leading-relaxed">헉! 벌써 반이나 오셨네요! 축하합니다!</h2>
+            <div class="mb-4 text-[10px] text-yellow-300 bg-black/60 px-4 py-2 rounded border border-yellow-500">
+                16스테이지 비밀번호: <span class="text-white font-bold tracking-widest">S16P</span>
+            </div>
             <button id="stage15-special-btn" class="retro-btn px-6 py-3 bg-yellow-400 text-black font-bold rounded border-2 border-white text-xs cursor-pointer">후반부 스테이지로 출발!</button>
         </div>
 
@@ -98,7 +204,7 @@
                 <span class="absolute -top-4 right-4 text-xs text-cyan-300 animate-bounce">Z z z</span>
             </div>
             <h2 id="downtime-title" class="text-xl md:text-2xl text-yellow-400 mb-4 retro-text">DOWN TIME</h2>
-            <p id="downtime-msg" class="text-gray-200 mb-6 text-xs max-w-md leading-relaxed">지금은 다운타임 시간입니다.</p>
+            <p id="downtime-msg" class="text-gray-200 mb-6 text-[10px] max-w-md leading-relaxed">지금은 다운타임 시간입니다.</p>
             <button id="downtime-ok-btn" class="retro-btn px-6 py-3 bg-blue-500 text-white font-bold rounded border-2 border-white text-xs cursor-pointer hidden">확인</button>
         </div>
 
@@ -114,138 +220,67 @@
         </div>
     </div>
 
+    <div class="mt-2 text-[9px] md:text-[10px] text-gray-400 tracking-wider text-center">
+        super rice jamjam studio
+    </div>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        let audioCtx = null;
-        const audioElements = {};
-
-        const audioIds = [
-            'bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible',
-            'scream-audio', 'rice-audio', 'stage-clear-audio', 'congrats-audio', 'notification-audio',
-            'downtime-audio', 'gun-audio', 'die-audio', 'gameover-audio', 'pause-audio'
-        ];
-
-        function initWebAudio() {
-            if (audioCtx) return;
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            audioIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    audioElements[id] = el;
-                    if ('preservesPitch' in el) el.preservesPitch = false;
-                    if ('mozPreservesPitch' in el) el.mozPreservesPitch = false;
-                    if ('webkitPreservesPitch' in el) el.webkitPreservesPitch = false;
-                }
-            });
-        }
-
-        function playAudio(id, loop = false) {
-            initWebAudio();
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            const el = audioElements[id];
-            if (el) {
-                el.loop = loop;
-                if (id !== 'downtime-audio' || el.paused) {
-                    el.currentTime = 0;
-                }
-                el.play().catch(() => {});
-            }
-        }
-
-        function stopAudio(id) {
-            const el = audioElements[id];
-            if (el) {
-                el.pause();
-                if (id !== 'downtime-audio') {
-                    el.currentTime = 0;
-                }
-            }
-        }
-
-        function stopAllBgm() {
-            ['bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible'].forEach(id => {
-                stopAudio(id);
-            });
-        }
-
-        function setAudioSpeedAndPitch(id, rate) {
-            const el = audioElements[id];
-            if (el) {
-                if ('preservesPitch' in el) el.preservesPitch = false;
-                if ('mozPreservesPitch' in el) el.mozPreservesPitch = false;
-                if ('webkitPreservesPitch' in el) el.webkitPreservesPitch = false;
-                el.playbackRate = rate;
-            }
-        }
-
-        function setAllBgmSpeedAndPitch(rate) {
-            ['bgm-title', 'bgm-stage', 'bgm-underground', 'bgm-water', 'bgm-snow', 'bgm-invincible'].forEach(id => {
-                setAudioSpeedAndPitch(id, rate);
-            });
-        }
-
         let gameState = {
             isActive: false,
             isPaused: false,
             score: 0,
             stage: 1,
             lives: 3,
-            timer: 100
+            timer: 100,
+            riceCount: 0
         };
 
         let player = {
             x: 100, y: 350, w: 42, h: 56,
-            vx: 0, vy: 0, speed: 5, jumpForce: -12,
+            vx: 0, vy: 0, speed: 5, normalSpeed: 5, jumpForce: -12,
             grounded: false, facing: 1,
             waterGunActive: true,
-            invincible: false, invincibleTimer: null
+            invincible: false, invincibleTimer: null,
+            permanentInvincible: false,
+            superSpeed: false, superSpeedTimer: null,
+            permSelfDestructImmune: false,
+            selfDestructShields: 0
         };
 
-        let cameraX = 0;
-        let platforms = [];
-        let mysteryBlocks = [];
-        let enemies = [];
-        let projectiles = [];
-        let riceCookerItems = [];
-        let boss = null;
-        let goalSwitch = { x: 3000, y: 472, w: 48, h: 48, pressed: false };
-        let snowMan = { x: 3000, y: 420, w: 48, h: 64, found: false };
+        let shopItemsList = ['perm_invincible', 'perm_self_destruct_immune', 'shield_3', 'shield_1', 'score_50'];
+        let selectedShopIndex = 0;
+        let activeConfirmItem = null;
 
-        let keys = { left: false, right: false, jump: false, shoot: false };
-        let lastTimerTick = Date.now();
-        let isDowntimeMode = false;
-        let isTenMinLockMode = false;
-        let lastNotifiedMinute = -1;
+        let cameraX = 0;
+        function updateUiBar() {
+            document.getElementById('ui-stage').innerText = gameState.stage;
+            document.getElementById('ui-score').innerText = gameState.score;
+            document.getElementById('ui-rice').innerText = gameState.riceCount;
+            document.getElementById('ui-lives').innerText = gameState.lives;
+            document.getElementById('ui-timer').innerText = gameState.timer;
+        }
 
         function playCurrentBgm() {
             if (!gameState.isActive) return;
-            let targetRate = gameState.timer <= 50 ? 1.5 : 1.0;
-            setAllBgmSpeedAndPitch(targetRate);
 
             if (player.invincible) {
                 stopAllBgm();
                 playAudio('bgm-invincible', true);
-                setAudioSpeedAndPitch('bgm-invincible', targetRate);
+                let invincibleRate = gameState.timer <= 50 ? 2.0 : 1.0;
+                setAudioSpeedAndPitch('bgm-invincible', invincibleRate);
                 return;
             }
             stopAllBgm();
+
             let targetAudioId = 'bgm-stage';
-            if (gameState.stage >= 7 && gameState.stage <= 12) targetAudioId = 'bgm-underground';
-            else if (gameState.stage >= 13 && gameState.stage <= 16) targetAudioId = 'bgm-water';
-            else if (gameState.stage >= 17 && gameState.stage <= 30) targetAudioId = 'bgm-snow';
+            if (boss && boss.alive) targetAudioId = 'bgm-boss';
+            else if (gameState.stage >= 7 && gameState.stage <= 13) targetAudioId = 'bgm-underground';
+            else if (gameState.stage >= 14 && gameState.stage <= 18) targetAudioId = 'bgm-water';
+            else if (gameState.stage >= 19 && gameState.stage <= 30) targetAudioId = 'bgm-snow';
+
             playAudio(targetAudioId, true);
-            setAudioSpeedAndPitch(targetAudioId, targetRate);
+            let bgmRate = player.superSpeed ? 1.5 : 1.0;
+            setAllBgmSpeedAndPitch(bgmRate);
         }
 
         function checkDowntimeClock() {
@@ -257,6 +292,7 @@
                 isDowntimeMode = true;
                 isTenMinLockMode = false;
                 stopAllBgm();
+                stopAudio('back-audio');
                 gameState.isActive = false;
 
                 document.getElementById('audio-unlock-screen').classList.add('hidden');
@@ -293,6 +329,7 @@
                 if (!isTenMinLockMode) {
                     isTenMinLockMode = true;
                     stopAllBgm();
+                    stopAudio('back-audio');
                     gameState.isActive = false;
                     if (audioElements['downtime-audio'] && audioElements['downtime-audio'].paused) {
                         playAudio('downtime-audio', true);
@@ -360,6 +397,7 @@
             const pauseScreen = document.getElementById('pause-screen');
             if (gameState.isPaused) {
                 playAudio('pause-audio', false);
+                stopAudio('back-audio');
                 pauseScreen.classList.remove('hidden');
             } else {
                 pauseScreen.classList.add('hidden');
@@ -369,12 +407,45 @@
 
         window.addEventListener('keydown', e => {
             if (e.code === 'Enter') {
+                if (document.activeElement === document.getElementById('password-input')) {
+                    checkPasswordAndStart();
+                    return;
+                }
+                const shopModal = document.getElementById('shop-modal');
+                const confirmModal = document.getElementById('shop-confirm-modal');
+                if (!confirmModal.classList.contains('hidden')) {
+                    confirmBuySelectedItem();
+                    return;
+                }
+                if (!shopModal.classList.contains('hidden')) {
+                    openShopConfirmModal(shopItemsList[selectedShopIndex]);
+                    return;
+                }
                 togglePause();
                 return;
             }
-            if (gameState.isPaused) return;
 
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            const shopModal = document.getElementById('shop-modal');
+            if (!shopModal.classList.contains('hidden') && document.getElementById('shop-confirm-modal').classList.contains('hidden')) {
+                if (e.code === 'ArrowUp') {
+                    selectedShopIndex = (selectedShopIndex - 1 + shopItemsList.length) % shopItemsList.length;
+                    highlightSelectedShopItem();
+                    return;
+                } else if (e.code === 'ArrowDown') {
+                    selectedShopIndex = (selectedShopIndex + 1) % shopItemsList.length;
+                    highlightSelectedShopItem();
+                    return;
+                }
+            }
+
+            if (gameState.isPaused || !gameState.isActive) return;
+
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                if (!keys.left) {
+                    keys.left = true;
+                    playAudio('back-audio', true);
+                }
+            }
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
                 if (!keys.jump) jumpPlayer();
@@ -384,14 +455,17 @@
         });
 
         window.addEventListener('keyup', e => {
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                keys.left = false;
+                stopAudio('back-audio');
+            }
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
         });
 
         canvas.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (gameState.isActive && !gameState.isPaused) {
+            if (gameState.isActive) {
                 togglePause();
             }
         });
@@ -403,14 +477,41 @@
             }
         });
 
-        document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.stopPropagation(); keys.left = true; });
-        document.getElementById('btn-left').addEventListener('touchend', (e) => { e.stopPropagation(); keys.left = false; });
+        document.getElementById('btn-left').addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            if (!keys.left && gameState.isActive && !gameState.isPaused) {
+                keys.left = true;
+                playAudio('back-audio', true);
+            }
+        });
+        document.getElementById('btn-left').addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            keys.left = false;
+            stopAudio('back-audio');
+        });
         document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.stopPropagation(); keys.right = true; });
         document.getElementById('btn-right').addEventListener('touchend', (e) => { e.stopPropagation(); keys.right = false; });
         document.getElementById('btn-jump').addEventListener('click', (e) => { e.stopPropagation(); jumpPlayer(); });
         document.getElementById('btn-shoot').addEventListener('click', (e) => { e.stopPropagation(); shootWaterGun(); });
 
-        document.getElementById('audio-unlock-btn').addEventListener('click', () => {
+        document.getElementById('self-destruct-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameState.isActive && !gameState.isPaused) {
+                if (player.permSelfDestructImmune) {
+                    showNoticePopup("자폭 버튼이 영원히 무효화되었습니다!");
+                    return;
+                }
+                if (player.selfDestructShields > 0) {
+                    player.selfDestructShields--;
+                    showNoticePopup(`자폭 방어 작동! (남은 방어: ${player.selfDestructShields}회)`);
+                    return;
+                }
+                gameState.lives = 0;
+                playerDie();
+            }
+        });
+
+        function startTitleScreen(startStage = 1) {
             initWebAudio();
             const now = new Date();
             const hours = now.getHours();
@@ -422,10 +523,37 @@
                 return;
             }
 
+            gameState.stage = startStage;
             document.getElementById('audio-unlock-screen').classList.add('hidden');
             document.getElementById('title-screen').classList.remove('hidden');
             stopAllBgm();
             playAudio('bgm-title', true);
+        }
+
+        function checkPasswordAndStart() {
+            const inputVal = document.getElementById('password-input').value.trim().toUpperCase();
+            const msgEl = document.getElementById('password-msg');
+
+            let matchedStage = null;
+            for (let stg in stagePasswords) {
+                if (stagePasswords[stg] === inputVal) {
+                    matchedStage = parseInt(stg);
+                    break;
+                }
+            }
+
+            if (matchedStage) {
+                msgEl.innerText = "";
+                startTitleScreen(matchedStage);
+            } else {
+                msgEl.innerText = "잘못된 비밀번호입니다!";
+            }
+        }
+
+        document.getElementById('password-btn').addEventListener('click', checkPasswordAndStart);
+
+        document.getElementById('audio-unlock-btn').addEventListener('click', () => {
+            startTitleScreen(1);
         });
 
         document.getElementById('start-game-btn').addEventListener('click', () => {
@@ -436,7 +564,7 @@
             gameState.isActive = true;
             gameState.isPaused = false;
             lastTimerTick = Date.now();
-            initStage(1);
+            initStage(gameState.stage);
         });
 
         function jumpPlayer() {
@@ -466,8 +594,23 @@
             player.vy = 0;
             cameraX = 0;
             projectiles = [];
+            riceGrains = [];
             riceCookerItems = [];
+            flipperItems = [];
+            riceParticles = [];
             boss = null;
+            keys.left = false;
+            keys.right = false;
+            stopAudio('back-audio');
+
+            // Apply persistent stats from shop
+            player.speed = player.normalSpeed || 5;
+            player.superSpeed = false;
+            if (player.superSpeedTimer) clearTimeout(player.superSpeedTimer);
+            if (player.permanentInvincible) {
+                player.invincible = true;
+            }
+            setAllBgmSpeedAndPitch(1.0);
 
             platforms = [];
             mysteryBlocks = [];
@@ -482,18 +625,29 @@
                 let platWidth = 260 + Math.random() * 180;
 
                 for (let px = currentX; px < currentX + platWidth && px < totalWidth; px += 50) {
-                    platforms.push({ x: px, y: groundY, w: 50, h: 80, type: stageNum >= 17 ? 'snow' : (stageNum >= 13 ? 'water' : (stageNum >= 7 ? 'underground' : 'ground')) });
+                    platforms.push({ x: px, y: groundY, w: 50, h: 80, type: stageNum >= 19 ? 'snow' : (stageNum >= 14 ? 'water' : (stageNum >= 7 ? 'underground' : 'ground')) });
                 }
 
                 if (platWidth > 140 && currentX > 120) {
                     enemies.push({
-                        x: currentX + 60, y: groundY - 40, w: 36, h: 36, vx: 1.5, minX: currentX + 30, maxX: currentX + platWidth - 60, alive: true
+                        x: currentX + 60, y: groundY - 40, w: 36, h: 36, vx: 1.5, minX: currentX + 30, maxX: currentX + platWidth - 60, alive: true, frozenTimer: 0
                     });
                 }
 
-                if (Math.random() < 0.6 && currentX > 200) {
+                if (Math.random() < 0.5 && currentX > 200) {
+                    riceGrains.push({
+                        x: currentX + 70, y: groundY - 100, w: 24, h: 24, collected: false
+                    });
+                } else if (Math.random() < 0.5 && currentX > 200) {
                     riceCookerItems.push({
-                        x: currentX + 90, y: groundY - 120, w: 40, h: 40, collected: false
+                        x: currentX + 110, y: groundY - 120, w: 40, h: 40, collected: false
+                    });
+                }
+
+                // 물 스테이지(14~18)일 경우 확률적으로 물갈퀴 아이템 생성
+                if (stageNum >= 14 && stageNum <= 18 && Math.random() < 0.5 && currentX > 200) {
+                    flipperItems.push({
+                        x: currentX + 160, y: groundY - 110, w: 32, h: 32, collected: false
                     });
                 }
 
@@ -502,13 +656,13 @@
 
             for (let i = 0; i < 5; i++) {
                 mysteryBlocks.push({
-                    x: 500 + i * 500, y: 320 - (i % 2) * 50, w: 40, h: 40, hit: false, item: 'rice'
+                    x: 500 + i * 500, y: 320 - (i % 2) * 50, w: 40, h: 40, hit: false, item: i % 2 === 0 ? 'grain' : 'cooker'
                 });
             }
 
             if (stageNum % 5 === 0) {
                 boss = {
-                    x: 2800, y: groundY - 100, w: 80, h: 80, hp: 5, maxHp: 5, vx: 1, dir: 1, alive: true
+                    x: 2800, y: groundY - 100, w: 80, h: 80, hp: 5, maxHp: 5, vx: 1, dir: 1, alive: true, frozenTimer: 0
                 };
             }
 
@@ -523,6 +677,74 @@
             if (!player.invincible) {
                 playCurrentBgm();
             }
+        }
+
+        function triggerRiceGrainEffect(x, y) {
+            playAudio('pause-audio', false);
+            gameState.score += 200;
+            gameState.riceCount += 1;
+            updateUiBar();
+
+            enemies.forEach(en => {
+                if (en.alive) en.frozenTimer = 180;
+            });
+            if (boss && boss.alive) boss.frozenTimer = 180;
+
+            for (let i = 0; i < 24; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = 2 + Math.random() * 6;
+                riceParticles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    life: 40 + Math.random() * 20
+                });
+            }
+        }
+
+        function triggerRiceCookerEffect() {
+            gameState.score += 500;
+            gameState.riceCount += 5;
+            updateUiBar();
+            activateInvincibleMode();
+        }
+
+        function activateInvincibleMode() {
+            player.invincible = true;
+            playAudio('rice-audio', false);
+            playCurrentBgm();
+
+            if (player.invincibleTimer) clearTimeout(player.invincibleTimer);
+            if (!player.permanentInvincible) {
+                player.invincibleTimer = setTimeout(() => {
+                    player.invincible = false;
+                    playCurrentBgm();
+                }, 8000);
+            }
+        }
+
+        function triggerRiceCookerEffect() {
+            gameState.score += 500;
+            activateInvincibleMode();
+        }
+
+        function triggerFlipperEffect() {
+            playAudio('gun-audio', false);
+            gameState.score += 300;
+            player.superSpeed = true;
+            player.speed = 10; // 초스피드 적용
+
+            // 물갈퀴 획득 시 배경음악 재생 속도 1.5배 가속 동기화
+            setAllBgmSpeedAndPitch(1.5);
+
+            if (player.superSpeedTimer) clearTimeout(player.superSpeedTimer);
+            player.superSpeedTimer = setTimeout(() => {
+                player.superSpeed = false;
+                player.speed = player.normalSpeed || 5;
+                if (!player.invincible) {
+                    setAllBgmSpeedAndPitch(1.0);
+                }
+            }, 8000);
         }
 
         function activateInvincibleMode() {
@@ -546,8 +768,14 @@
                 if (gameState.timer <= 0) {
                     playerDie();
                 } else {
-                    let desiredRate = gameState.timer <= 50 ? 1.5 : 1.0;
-                    setAllBgmSpeedAndPitch(desiredRate);
+                    if (player.invincible) {
+                        let invincibleRate = gameState.timer <= 50 ? 2.0 : 1.0;
+                        setAudioSpeedAndPitch('bgm-invincible', invincibleRate);
+                    } else if (player.superSpeed) {
+                        setAllBgmSpeedAndPitch(1.5);
+                    } else {
+                        setAllBgmSpeedAndPitch(1.0);
+                    }
                 }
             }
 
@@ -581,9 +809,21 @@
                     player.vy = 2;
                     if (!mb.hit) {
                         mb.hit = true;
-                        activateInvincibleMode();
-                        gameState.score += 200;
+                        if (mb.item === 'grain') {
+                            triggerRiceGrainEffect(mb.x + mb.w / 2, mb.y);
+                        } else {
+                            triggerRiceCookerEffect();
+                        }
                     }
+                }
+            });
+
+            riceGrains.forEach(rg => {
+                if (!rg.collected &&
+                    player.x + player.w > rg.x && player.x < rg.x + rg.w &&
+                    player.y + player.h > rg.y && player.y < rg.y + rg.h) {
+                    rg.collected = true;
+                    triggerRiceGrainEffect(rg.x + rg.w / 2, rg.y + rg.h / 2);
                 }
             });
 
@@ -592,10 +832,29 @@
                     player.x + player.w > rc.x && player.x < rc.x + rc.w &&
                     player.y + player.h > rc.y && player.y < rc.y + rc.h) {
                     rc.collected = true;
-                    activateInvincibleMode();
-                    gameState.score += 500;
+                    triggerRiceCookerEffect();
                 }
             });
+
+            flipperItems.forEach(fi => {
+                if (!fi.collected &&
+                    player.x + player.w > fi.x && player.x < fi.x + fi.w &&
+                    player.y + player.h > fi.y && player.y < fi.y + fi.h) {
+                    fi.collected = true;
+                    triggerFlipperEffect();
+                }
+            });
+
+            for (let i = riceParticles.length - 1; i >= 0; i--) {
+                let pt = riceParticles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.vy += 0.2;
+                pt.life--;
+                if (pt.life <= 0) {
+                    riceParticles.splice(i, 1);
+                }
+            }
 
             if (player.y > canvas.height + 100) {
                 playerDie();
@@ -603,29 +862,61 @@
 
             enemies.forEach(en => {
                 if (!en.alive) return;
-                en.x += en.vx;
-                if (en.x < en.minX || en.x > en.maxX) en.vx *= -1;
 
-                if (!player.invincible &&
-                    player.x + player.w > en.x + 4 && player.x < en.x + en.w - 4 &&
+                if (en.frozenTimer > 0) {
+                    en.frozenTimer--;
+                } else {
+                    en.x += en.vx;
+                    if (en.x < en.minX || en.x > en.maxX) en.vx *= -1;
+                }
+
+                if (player.x + player.w > en.x + 4 && player.x < en.x + en.w - 4 &&
                     player.y + player.h > en.y + 4 && player.y < en.y + en.h) {
-                    playerDie();
+                    if (player.invincible) {
+                        en.alive = false;
+                        gameState.score += 200;
+                    } else {
+                        playerDie();
+                    }
                 }
             });
 
             if (boss && boss.alive) {
-                boss.x += boss.vx * boss.dir;
-                if (boss.x < 2500 || boss.x > 3100) boss.dir *= -1;
+                if (boss.frozenTimer > 0) {
+                    boss.frozenTimer--;
+                } else {
+                    boss.x += boss.vx * boss.dir;
+                    if (boss.x < 2500 || boss.x > 3100) boss.dir *= -1;
+                }
 
-                if (!player.invincible &&
-                    player.x + player.w > boss.x && player.x < boss.x + boss.w &&
+                if (player.x + player.w > boss.x && player.x < boss.x + boss.w &&
                     player.y + player.h > boss.y && player.y < boss.y + boss.h) {
-                    playerDie();
+                    if (player.invincible) {
+                        boss.hp -= 2;
+                        if (boss.hp <= 0) {
+                            boss.alive = false;
+                            gameState.score += 2000;
+                            playAudio('win-audio', false);
+                        }
+                    } else {
+                        playerDie();
+                    }
                 }
             }
 
             projectiles.forEach((proj, idx) => {
                 proj.x += proj.vx;
+
+                enemies.forEach(en => {
+                    if (en.alive &&
+                        proj.x + proj.w > en.x && proj.x < en.x + en.w &&
+                        proj.y + proj.h > en.y && proj.y < en.y + en.h) {
+                        en.alive = false;
+                        gameState.score += 100;
+                        projectiles.splice(idx, 1);
+                    }
+                });
+
                 if (boss && boss.alive &&
                     proj.x + proj.w > boss.x && proj.x < boss.x + boss.w &&
                     proj.y + proj.h > boss.y && proj.y < boss.y + boss.h) {
@@ -634,11 +925,13 @@
                     if (boss.hp <= 0) {
                         boss.alive = false;
                         gameState.score += 2000;
+                        playAudio('win-audio', false);
+                        playCurrentBgm();
                     }
                 }
             });
 
-            if (gameState.stage >= 17 && gameState.stage <= 30) {
+            if (gameState.stage >= 19 && gameState.stage <= 30) {
                 if (!snowMan.found &&
                     player.x + player.w > snowMan.x && player.x < snowMan.x + snowMan.w &&
                     player.y + player.h > snowMan.y && player.y + player.h < snowMan.y + snowMan.h + 20) {
@@ -666,6 +959,7 @@
         function playerDie() {
             if (player.invincible) return;
             gameState.lives--;
+            stopAudio('back-audio');
             playAudio('die-audio', false);
             if (gameState.lives <= 0) {
                 gameState.isActive = false;
@@ -681,9 +975,8 @@
 
         function triggerStageClear() {
             gameState.isActive = false;
-            if (!player.invincible) {
-                stopAllBgm();
-            }
+            stopAudio('back-audio');
+            stopAllBgm(); // 스테이지 클리어 시 무적 포함 모든 BGM 중지
 
             if (gameState.stage === 15) {
                 playAudio('stage-clear-audio', false);
@@ -699,118 +992,207 @@
             if (gameState.stage >= 30) {
                 document.getElementById('ending-screen').classList.remove('hidden');
             } else {
-                document.getElementById('clear-screen').classList.remove('hidden');
+                const clearScreen = document.getElementById('clear-screen');
+                const pwDisplayBox = document.getElementById('pw-display-box');
+                const nextPwEl = document.getElementById('next-stage-pw');
+                const openShopBtn = document.getElementById('open-shop-btn');
+
+                clearScreen.classList.remove('hidden');
                 document.getElementById('clear-msg').innerText = `STAGE ${gameState.stage} 클리어 완료!`;
+
+                let nextStage = gameState.stage + 1;
+                if (gameState.stage >= 2 && stagePasswords[nextStage]) {
+                    pwDisplayBox.classList.remove('hidden');
+                    nextPwEl.innerText = stagePasswords[nextStage];
+                } else {
+                    pwDisplayBox.classList.add('hidden');
+                }
+
+                // Show Item Shop button on theme transition stages (e.g. 6->7, 13->14, 18->19, 25->26) ONLY if riceCount > 0
+                const themeTransitionStages = [6, 13, 18, 25];
+                if (themeTransitionStages.includes(gameState.stage) && gameState.riceCount > 0) {
+                    openShopBtn.classList.remove('hidden');
+                } else {
+                    openShopBtn.classList.add('hidden');
+                }
             }
         }
 
-        document.getElementById('next-stage-btn').addEventListener('click', () => {
-            document.getElementById('clear-screen').classList.add('hidden');
-            if (gameState.stage === 12 || gameState.stage === 16) {
-                playAudio('scream-audio', false);
+        function highlightSelectedShopItem() {
+            const cards = document.querySelectorAll('.shop-item-card');
+            cards.forEach((card, idx) => {
+                if (idx === selectedShopIndex) {
+                    card.classList.add('border-yellow-400', 'bg-gray-700');
+                    card.classList.remove('border-gray-600', 'bg-gray-800');
+                } else {
+                    card.classList.remove('border-yellow-400', 'bg-gray-700');
+                    card.classList.add('border-gray-600', 'bg-gray-800');
+                }
+            });
+        }
+
+        function updateShopUI() {
+            document.getElementById('shop-rice-count').innerText = gameState.riceCount;
+            highlightSelectedShopItem();
+        }
+
+        function openShopConfirmModal(itemId) {
+            activeConfirmItem = itemId;
+            document.getElementById('shop-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeShopCompletely() {
+            document.getElementById('shop-confirm-modal').classList.add('hidden');
+            document.getElementById('shop-modal').classList.add('hidden');
+            stopAudio('bgm-shop');
+
+            // 쌀이 0개 이하가 되면 상점 버튼을 화면에서 완전히 제거
+            if (gameState.riceCount <= 0) {
+                document.getElementById('open-shop-btn').classList.add('hidden');
             }
-            initStage(gameState.stage + 1);
-            gameState.isActive = true;
-            gameState.isPaused = false;
-            lastTimerTick = Date.now();
+        }
+
+        function confirmBuySelectedItem() {
+            if (!activeConfirmItem) return;
+            const itemId = activeConfirmItem;
+            let price = 0;
+
+            if (itemId === 'perm_invincible') price = 100;
+            else if (itemId === 'perm_self_destruct_immune') price = 50;
+            else if (itemId === 'shield_3') price = 30;
+            else if (itemId === 'shield_1') price = 10;
+            else if (itemId === 'score_50') price = 5;
+
+            if (gameState.riceCount < price) {
+                playAudio('die-audio', false);
+                showNoticePopup("쌀이 부족합니다!");
+                document.getElementById('shop-confirm-modal').classList.add('hidden');
+                return;
+            }
+
+            // 실제 보유 쌀 차감
+            gameState.riceCount -= price;
+
+            if (itemId === 'perm_invincible') {
+                player.permanentInvincible = true;
+                player.invincible = true;
+            } else if (itemId === 'perm_self_destruct_immune') {
+                player.permSelfDestructImmune = true;
+            } else if (itemId === 'shield_3') {
+                player.selfDestructShields += 3;
+            } else if (itemId === 'shield_1') {
+                player.selfDestructShields += 1;
+            } else if (itemId === 'score_50') {
+                gameState.score += 50;
+            }
+
+            playAudio('gun-audio', false);
+            document.getElementById('shop-confirm-modal').classList.add('hidden');
+            updateShopUI();
+            updateUiBar();
+        }
+
+        document.getElementById('open-shop-btn').addEventListener('click', () => {
+            stopAllBgm();
+            playAudio('bgm-shop', true);
+            selectedShopIndex = 0;
+            updateShopUI();
+            document.getElementById('shop-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('close-shop-btn').addEventListener('click', () => {
+            closeShopCompletely();
+        });
+
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+            closeShopCompletely();
+        });
+
+        document.getElementById('confirm-buy-btn').addEventListener('click', () => {
+            confirmBuySelectedItem();
+        });
+
+        // Setup Item click & double-click interactions
+        document.querySelectorAll('.shop-item-card').forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                const itemId = card.getAttribute('data-item-id');
+                if (selectedShopIndex === idx) {
+                    openShopConfirmModal(itemId);
+                } else {
+                    selectedShopIndex = idx;
+                    highlightSelectedShopItem();
+                }
+            });
+        });
+
+        document.getElementById('close-shop-btn').addEventListener('click', () => {
+            document.getElementById('shop-modal').classList.add('hidden');
+        });
+
+        // Shop Item Purchases
+        document.getElementById('buy-perm-invincible-btn').addEventListener('click', () => {
+            if (player.permanentInvincible) return;
+            if (gameState.riceCount >= 100) {
+                gameState.riceCount -= 100;
+                player.permanentInvincible = true;
+                player.invincible = true;
+                playAudio('rice-audio', false);
+                updateShopUI();
+                updateUiBar();
+            } else {
+                playAudio('die-audio', false);
+            }
+        });
+
+        document.getElementById('buy-life-btn').addEventListener('click', () => {
+            if (gameState.riceCount >= 10) {
+                gameState.riceCount -= 10;
+                gameState.lives += 1;
+                playAudio('gun-audio', false);
+                updateShopUI();
+                updateUiBar();
+            } else {
+                playAudio('die-audio', false);
+            }
+        });
+
+        document.getElementById('buy-speed-btn').addEventListener('click', () => {
+            if (gameState.riceCount >= 15) {
+                gameState.riceCount -= 15;
+                player.normalSpeed += 2;
+                player.speed = player.normalSpeed;
+                playAudio('gun-audio', false);
+                updateShopUI();
+                updateUiBar();
+            } else {
+                playAudio('die-audio', false);
+            }
+        });
+
+        document.getElementById('buy-time-btn').addEventListener('click', () => {
+            if (gameState.riceCount >= 5) {
+                gameState.riceCount -= 5;
+                gameState.timer += 50;
+                playAudio('gun-audio', false);
+                updateShopUI();
+                updateUiBar();
+            } else {
+                playAudio('die-audio', false);
+            }
         });
 
         document.getElementById('stage15-special-btn').addEventListener('click', () => {
-            document.getElementById('stage15-special-screen').classList.add('hidden');
+        function update() {
+            if (!gameState.isActive || gameState.isPaused) return;
+
             playAudio('scream-audio', false);
-            initStage(16);
-            gameState.isActive = true;
-            gameState.isPaused = false;
-            lastTimerTick = Date.now();
-        });
+            cameraX = player.x - canvas.width / 3;
+            if (cameraX < 0) cameraX = 0;
 
-        document.getElementById('restart-btn').addEventListener('click', () => {
-            document.getElementById('gameover-screen').classList.add('hidden');
-            gameState.lives = 3;
-            gameState.score = 0;
-            initStage(1);
-            gameState.isActive = true;
-            gameState.isPaused = false;
-            lastTimerTick = Date.now();
-        });
+            updateUiBar();
+        }
 
-        document.getElementById('ending-restart-btn').addEventListener('click', () => {
-            document.getElementById('ending-screen').classList.add('hidden');
-            gameState.lives = 3;
-            gameState.score = 0;
-            initStage(1);
-            gameState.isActive = true;
-            gameState.isPaused = false;
-            lastTimerTick = Date.now();
-        });
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let stageNum = gameState.stage;
-            let skyColor = "#87CEEB";
-            if (stageNum >= 7 && stageNum <= 12) skyColor = "#1a1a2e";
-            else if (stageNum >= 13 && stageNum <= 16) skyColor = "#023e8a";
-            else if (stageNum >= 17 && stageNum <= 30) skyColor = "#caf0f8";
-
-            ctx.fillStyle = skyColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.translate(-cameraX, 0);
-
-            platforms.forEach(p => {
-                if (p.type === 'snow') ctx.fillStyle = "#ffffff";
-                else if (p.type === 'water') ctx.fillStyle = "#0077b6";
-                else if (p.type === 'underground') ctx.fillStyle = "#3a3a3a";
-                else ctx.fillStyle = "#2baf2b";
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-
-                ctx.strokeStyle = "#000";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
-            });
-
-            mysteryBlocks.forEach(mb => {
-                ctx.fillStyle = mb.hit ? "#888" : "#f39c12";
-                ctx.fillRect(mb.x, mb.y, mb.w, mb.h);
-                ctx.strokeStyle = "#000";
-                ctx.strokeRect(mb.x, mb.y, mb.w, mb.h);
-                ctx.fillStyle = "#fff";
-                ctx.font = "16px 'Press Start 2P'";
-                ctx.fillText("?", mb.x + 12, mb.y + 26);
-            });
-
-            riceCookerItems.forEach(rc => {
-                if (!rc.collected) {
-                    ctx.fillStyle = "#ff4757";
-                    ctx.fillRect(rc.x, rc.y, rc.w, rc.h);
-                    ctx.strokeStyle = "#000";
-                    ctx.strokeRect(rc.x, rc.y, rc.w, rc.h);
-                    ctx.fillStyle = "#fff";
-                    ctx.font = "8px 'Press Start 2P'";
-                    ctx.fillText("RICE", rc.x + 4, rc.y + 24);
-                }
-            });
-
-            enemies.forEach(en => {
-                if (en.alive) {
-                    ctx.fillStyle = "#e74c3c";
-                    ctx.fillRect(en.x, en.y, en.w, en.h);
-                    ctx.fillStyle = "#fff";
-                    ctx.fillRect(en.x + 6, en.y + 8, 6, 6);
-                    ctx.fillRect(en.x + 22, en.y + 8, 6, 6);
-                }
-            });
-
-            if (boss && boss.alive) {
-                ctx.fillStyle = "#8e44ad";
-                ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
-                ctx.fillStyle = "#f1c40f";
-                ctx.fillRect(boss.x + 10, boss.y - 15, (boss.hp / boss.maxHp) * 60, 8);
-            }
-
-            if (stageNum >= 17 && stageNum <= 30) {
+            if (stageNum >= 19 && stageNum <= 30) {
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(snowMan.x + 24, snowMan.y + 20, 16, 0, Math.PI * 2);
@@ -829,6 +1211,12 @@
                 ctx.arc(proj.x + proj.w / 2, proj.y + proj.h / 2, 6, 0, Math.PI * 2);
                 ctx.fill();
             });
+
+            // 초스피드 물갈퀴 잔상 효과
+            if (player.superSpeed) {
+                ctx.fillStyle = "rgba(0, 206, 201, 0.4)";
+                ctx.fillRect(player.x - player.facing * 14, player.y, player.w, player.h);
+            }
 
             ctx.fillStyle = player.invincible ? "#f1c40f" : "#fffa65";
             ctx.fillRect(player.x, player.y, player.w, player.h);
